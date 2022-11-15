@@ -4,6 +4,8 @@
 """
 import operator as o
 import decimal as d
+import pandas as pd
+import statistics
 
 
 def __get_form_type__(read_line: str) -> int:
@@ -22,12 +24,14 @@ def __get_form_type__(read_line: str) -> int:
     Returns:
         int: some_num from input string
     """
-    read_line = read_line.split()
-    return int(read_line[3])
-
+    if 'Form' in read_line:
+        read_line = read_line.split()
+        return int(read_line[3])
+    else:
+        return 0
 
 def compute_contrasts(f_in: str, f_out: str) -> str:
-    """Takes the text from f_in, do Andrei Bely method and put it in f_out
+    """Takes the text from f_in, do Andrei Bely's method and put it in f_out
 
     Args:
         f_in (str): name of input file with text to process
@@ -36,26 +40,37 @@ def compute_contrasts(f_in: str, f_out: str) -> str:
     Returns:
         str: 'Done' if algorithm ended up with a success
     """
-
+    
     with open(f_in, 'r', encoding='utf-8') as f_input, \
         open(f_out, 'w', encoding='utf-8') as f_output:
-        contrast = 1
-        current_form_type = 0
-        flag_skip = False
-        total_avg = d.Decimal(0)
-    
+
+            
+            
+        # Text can contain non-poetry text which is don't needed to be processed
+        # so we skip it and memorize the number of skipped forms
+        skipped_form0: int = 0
         
-        skipped_form0 = 0
+        # The first meaningful poetry line in the text starts with the biggest contrast
+        contrast : int = 1
+        
+        # so after we find a new non-poetry text with form 0 we must skip it
+        flag_skip: bool = False
+        
+        current_form_type: int
+        avg_of_part = d.Decimal(contrast)              
+
+
+        # skipping form's 0
         for line in f_input:            
             current_form_type = __get_form_type__(line)
             if current_form_type != 0:
-                print('{} \tзначение контрастности: {:.3f}'.format(line.strip(), contrast), file=f_output)
+                print("{} \tContarst's value: {:.3f}".format(line.strip(), contrast), file=f_output)
                 break
             print(line.strip(), file=f_output)
             skipped_form0 += 1
         list_forms = list([skipped_form0] * 17)
         
-        
+
         for i, line in enumerate(f_input, skipped_form0 + 1):
 
             line = line.strip()
@@ -85,19 +100,29 @@ def compute_contrasts(f_in: str, f_out: str) -> str:
                     else:
                         contrast = 1
 
-                total_avg += d.Decimal(contrast)
-                print('{} \tзначение контрастности: {:.3f}'.format(line.strip(), contrast), file=f_output)
+                avg_of_part += d.Decimal(contrast)
+                print("{} \tContrast's value: {:.3f}".format(line.strip(), contrast), file=f_output)
 
             else:
-                total_avg = (total_avg * 4) / d.Decimal(n)
-                print("Среднее значение контрастности: {:.3f}, строк в фрагменте: {}".format(total_avg, n), file=f_output)
+                avg_of_part = (avg_of_part * 4) / d.Decimal(n)
+                print("Average contrast: {:.3f}, lines in fragment: {}".format(avg_of_part, n), file=f_output)
                 print(line, file=f_output)                
-                total_avg = 0
+                avg_of_part = 0
                 list_forms[0] = i + 1
                 flag_skip = True
                 
     return "Done"
 
 
-
-# compute_contrasts("SashaTop.txt", "SashaSuperTop.txt")
+def avgs_to_excel(f_in: str, exc_out: str) -> None:
+    # Average contrast: 2.048, lines in fragment: 20
+    data = []
+    with open(f_in, 'r', encoding='utf-8') as fin:
+        for line in fin:
+            if 'Average contrast:' in line:
+                number = float(line.split()[2].strip(','))
+                data.append(number)
+    df = pd.DataFrame({'Averages': data, 'Total_Average': [round(statistics.mean(data), 4)] + ['' for _ in range(len(data)-1)]}) #columns=range(1, len(data)+1))
+    df.to_excel(exc_out)
+    del df
+    
