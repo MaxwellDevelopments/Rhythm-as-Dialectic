@@ -128,18 +128,20 @@ def compute_contrasts(f_in: str, f_out: str) -> str:
 
 
 def avgs_to_excel(f_in: str, exc_out: str) -> None:
+    regex = r"contrast.*(\d+\.\d+).*"
     data = []
     with open(f_in, 'r', encoding='utf-8') as fin:
         for line in fin:
             if 'Average contrast:' in line:
-                number = float(line.split()[7].strip(','))
-                data.append(number)
+                match = re.search(regex, line)
+                data.append(float(match.group(1)))
     df = pd.DataFrame({'Averages': data})#, 'Total_Average': [round(statistics.mean(data), 4)] + ['' for _ in range(len(data)-1)]}) #columns=range(1, len(data)+1))
     df.to_excel(exc_out)
     del df
     
 
 def made_plot_excel(f_in: str, exc_out: str) -> None:
+    regex = r"contrast.*(\d+\.\d+).*"
     workbook = Workbook()
     worksheet = workbook.active
     worksheet.title = "bely's method"
@@ -156,7 +158,7 @@ def made_plot_excel(f_in: str, exc_out: str) -> None:
 
     data = []
     with open(f_in, 'r', encoding='utf-8') as fin:
-        data = [float(line.split()[7].strip(',')) for line in fin if 'Average contrast:' in line] 
+        data = [re.search(regex, line).group(1) for line in fin if 'Average contrast:' in line] 
 
     df = pd.DataFrame({'Chapters': list(range(1, len(data)+1)), 'Averages': data})
 
