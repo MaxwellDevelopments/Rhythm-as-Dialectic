@@ -79,13 +79,15 @@ def compute_contrasts(f_in: str, f_out: str) -> str:
             skipped_form0 += 1
         list_forms = list([-1] * 17)
         list_forms[current_form_type] = 0
+        list_forms[0] = 1
 
+        # main algorithm
         for i, line in enumerate(f_input, 1):
 
             line = line.strip()
             current_form_type = __get_form_type__(line)
+            
             if flag_skip and current_form_type == 0:
-                list_forms[0] += 1
                 print(line, file=f_output)
                 continue
             else:
@@ -95,6 +97,8 @@ def compute_contrasts(f_in: str, f_out: str) -> str:
 
             if current_form_type > 0:
 
+                list_forms[0] += 1
+                
                 if list_forms[current_form_type] == -1:
                     list_forms[current_form_type] = i
                     contrast = 1
@@ -113,11 +117,11 @@ def compute_contrasts(f_in: str, f_out: str) -> str:
             else:
                 if current_form_type == -1:
                     avg_of_part = (avg_of_part * 4) / dec.Decimal(n)
-                    print(line, "Average contrast: {:.3f}, lines in fragment: {}".format(avg_of_part, n), file=f_output)
+                    print(line, "Average contrast: {:.3f}, lines in fragment: {}".format(avg_of_part, list_forms[0]), file=f_output)
                     avg_of_part = 0
+                    list_forms[0] = 0
                 else:
                     print(line, file=f_output)
-                    list_forms[0] = i + 1
                 flag_skip = True
                 
     return "Done"
