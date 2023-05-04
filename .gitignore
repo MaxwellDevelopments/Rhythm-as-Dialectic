@@ -130,4 +130,5 @@ dmypy.json
 
 # output
 sample_output_data/
+sample_input_data/
 excels/
